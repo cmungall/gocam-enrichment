@@ -1,0 +1,48 @@
+schema_version: 1
+id: pombe_phosphoinositide_genes
+title: PomBase phosphoinositide genes
+category: gene_set
+inputs_path: inputs.tsv
+description: >
+  Fission yeast gene products anchored on phosphoinositide, inositol phosphate,
+  and related lipid signaling activities.
+provenance:
+  source_kind: curated_fixture
+  source_name: GO-CAM development corpus
+  source_path: ../gocam/data/gocam.yaml
+  selection_notes: >
+    Hand-selected from PomBase identifiers observed in GO-CAM activities around
+    phosphatidylinositol, inositol phosphate metabolism, and related transport
+    or kinase/phosphatase biology.
+  value_notes: >
+    Magnitudes are synthetic directional weights for exercising signed
+    diffusion; they are not measurements from a specific experiment.
+context:
+  taxon: NCBITaxon:4896
+  species_label: Schizosaccharomyces pombe
+  recommended_graph: .cache/gocam/full-megagraph.json
+expected_answer:
+  intent: Recover a phosphoinositide/inositol phosphate neighborhood rather than one fixed GO-CAM model.
+  expected_input_coverage: all inputs should map in the current megagraph cache
+  should_surface:
+    - id: GO:0032958
+      label: inositol phosphate biosynthetic process
+      role: biological process
+    - id: GO:0046854
+      label: phosphatidylinositol phosphate biosynthetic process
+      role: biological process
+    - id: GO:0004435
+      label: phosphatidylinositol-4,5-bisphosphate phospholipase C activity
+      role: molecular function
+    - id: CHEBI:17268
+      label: myo-inositol
+      role: shared chemical neighborhood
+  evaluation_notes: >
+    Treat these as expected semantic anchors, not an exhaustive gold standard.
+    Useful metrics are input coverage, rank of the expected terms, and whether
+    the returned subgraph remains interpretable after hub filtering.
+recommended_command: >-
+  uv run gocam-enrich run
+  gallery/input_sets/gene_sets/pombe_phosphoinositide_genes/metadata.yaml
+  --graph .cache/gocam/full-megagraph.json --taxon NCBITaxon:4896
+  --out results/pombe_phosphoinositide_genes

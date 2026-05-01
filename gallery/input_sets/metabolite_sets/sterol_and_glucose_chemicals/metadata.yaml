@@ -1,0 +1,41 @@
+schema_version: 1
+id: sterol_and_glucose_chemicals
+title: Sterol and glucose chemical anchors
+category: metabolite_set
+inputs_path: inputs.tsv
+description: >
+  Chemical-only input set combining sterol and glucose phosphate anchors to
+  exercise multi-neighborhood retrieval.
+provenance:
+  source_kind: curated_fixture
+  source_name: GO-CAM development corpus
+  source_path: ../gocam/data/gocam.yaml
+  selection_notes: >
+    Chosen from ChEBI identifiers observed in GO-CAM activities involving
+    ergosterol, cholesterol, and glucose-phosphate metabolism or transport.
+  value_notes: Synthetic metabolomics magnitudes.
+context:
+  taxon: null
+  species_label: mixed or unspecified
+  recommended_graph: .cache/gocam/full-megagraph.json
+expected_answer:
+  intent: Return separable sterol and glucose-related neighborhoods rather than forcing one pathway label.
+  expected_input_coverage: all inputs should map in the current megagraph cache
+  should_surface:
+    - id: GO:0006696
+      label: ergosterol biosynthetic process
+      role: sterol process anchor
+    - id: GO:0098708
+      label: D-glucose import across plasma membrane
+      role: glucose transport neighborhood
+    - id: GO:0061620
+      label: glycolytic process through glucose-6-phosphate
+      role: glucose metabolism neighborhood
+  evaluation_notes: >
+    This is intentionally not a single-coherent pathway. A good result may
+    return multiple subgraphs with different chemical neighborhoods.
+recommended_command: >-
+  uv run gocam-enrich run
+  gallery/input_sets/metabolite_sets/sterol_and_glucose_chemicals/metadata.yaml
+  --graph .cache/gocam/full-megagraph.json
+  --out results/sterol_and_glucose_chemicals

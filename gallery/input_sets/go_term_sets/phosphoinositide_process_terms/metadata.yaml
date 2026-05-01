@@ -1,0 +1,42 @@
+schema_version: 1
+id: phosphoinositide_process_terms
+title: Phosphoinositide process and function terms
+category: go_term_set
+inputs_path: inputs.tsv
+description: >
+  GO-term-only semantic query for phosphoinositide and inositol phosphate
+  biology.
+provenance:
+  source_kind: curated_fixture
+  source_name: Gene Ontology terms present in the GO-CAM development corpus
+  source_path: ../gocam/data/gocam.yaml
+  selection_notes: >
+    Hand-selected GO biological process and molecular function terms that should
+    directly ground phosphoinositide-related GO-CAM activities.
+  value_notes: Semantic weights are synthetic confidence-like anchors.
+context:
+  taxon: null
+  species_label: mixed or unspecified
+  recommended_graph: .cache/gocam/full-megagraph.json
+expected_answer:
+  intent: Test semantic seeding without genes or chemicals.
+  expected_input_coverage: all inputs should map in the current megagraph cache
+  should_surface:
+    - id: GO:0032958
+      label: inositol phosphate biosynthetic process
+      role: direct input and expected top term
+    - id: GO:0046854
+      label: phosphatidylinositol phosphate biosynthetic process
+      role: direct input and expected top term
+    - id: GO:0004435
+      label: phosphatidylinositol-4,5-bisphosphate phospholipase C activity
+      role: direct input and expected top function
+  evaluation_notes: >
+    This helps distinguish term-aware retrieval from pure gene-list enrichment.
+    The returned activities should be grounded by GO-CAM statements using these
+    terms, not just lexical similarity.
+recommended_command: >-
+  uv run gocam-enrich run
+  gallery/input_sets/go_term_sets/phosphoinositide_process_terms/metadata.yaml
+  --graph .cache/gocam/full-megagraph.json
+  --out results/phosphoinositide_process_terms

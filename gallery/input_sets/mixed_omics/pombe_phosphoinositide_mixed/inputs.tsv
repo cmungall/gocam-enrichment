@@ -1,0 +1,8 @@
+id	type	modality	value	label
+PomBase:SPAC22F8.11	gene	transcriptomics	2.0	plc1 Spom
+PomBase:SPAC20G8.03	gene	transcriptomics	-1.2	itr2 Spom
+PomBase:SPAC1D4.08	gene	transcriptomics	-1.0	pis1 Spom
+CHEBI:17268	chemical	metabolomics	-1.2	myo-inositol
+GO:0032958	go_term	semantic	0.8	inositol phosphate biosynthetic process
+GO:0046854	go_term	semantic	0.6	phosphatidylinositol phosphate biosynthetic process
+

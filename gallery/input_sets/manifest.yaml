@@ -1,0 +1,52 @@
+schema_version: 2
+description: Rich example input sets for GO-CAM grounded network retrieval.
+layout: Each set directory contains metadata.yaml and inputs.tsv.
+sets:
+  - id: pombe_phosphoinositide_genes
+    category: gene_set
+    taxon: NCBITaxon:4896
+    modalities: [transcriptomics]
+    metadata_path: gene_sets/pombe_phosphoinositide_genes/metadata.yaml
+    inputs_path: gene_sets/pombe_phosphoinositide_genes/inputs.tsv
+  - id: human_egfr_akt_stat_signaling
+    category: gene_set
+    taxon: NCBITaxon:9606
+    modalities: [proteomics, phosphoproteomics, transcriptomics]
+    metadata_path: gene_sets/human_egfr_akt_stat_signaling/metadata.yaml
+    inputs_path: gene_sets/human_egfr_akt_stat_signaling/inputs.tsv
+  - id: mouse_egfr_mapk_stat_signaling
+    category: gene_set
+    taxon: NCBITaxon:10090
+    modalities: [transcriptomics]
+    metadata_path: gene_sets/mouse_egfr_mapk_stat_signaling/metadata.yaml
+    inputs_path: gene_sets/mouse_egfr_mapk_stat_signaling/inputs.tsv
+  - id: inositol_lipid_chemicals
+    category: metabolite_set
+    taxon: null
+    modalities: [metabolomics]
+    metadata_path: metabolite_sets/inositol_lipid_chemicals/metadata.yaml
+    inputs_path: metabolite_sets/inositol_lipid_chemicals/inputs.tsv
+  - id: sterol_and_glucose_chemicals
+    category: metabolite_set
+    taxon: null
+    modalities: [metabolomics]
+    metadata_path: metabolite_sets/sterol_and_glucose_chemicals/metadata.yaml
+    inputs_path: metabolite_sets/sterol_and_glucose_chemicals/inputs.tsv
+  - id: phosphoinositide_process_terms
+    category: go_term_set
+    taxon: null
+    modalities: [semantic]
+    metadata_path: go_term_sets/phosphoinositide_process_terms/metadata.yaml
+    inputs_path: go_term_sets/phosphoinositide_process_terms/inputs.tsv
+  - id: pombe_phosphoinositide_mixed
+    category: mixed_omics
+    taxon: NCBITaxon:4896
+    modalities: [transcriptomics, metabolomics, semantic]
+    metadata_path: mixed_omics/pombe_phosphoinositide_mixed/metadata.yaml
+    inputs_path: mixed_omics/pombe_phosphoinositide_mixed/inputs.tsv
+  - id: human_plc_gpcr_mixed
+    category: mixed_omics
+    taxon: NCBITaxon:9606
+    modalities: [proteomics, phosphoproteomics, transcriptomics, metabolomics, semantic]
+    metadata_path: mixed_omics/human_plc_gpcr_mixed/metadata.yaml
+    inputs_path: mixed_omics/human_plc_gpcr_mixed/inputs.tsv

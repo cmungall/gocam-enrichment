@@ -1,0 +1,4 @@
+"""GO-CAM grounded network retrieval."""
+
+__version__ = "0.1.0"
+

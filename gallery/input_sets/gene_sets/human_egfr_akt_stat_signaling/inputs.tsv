@@ -1,0 +1,8 @@
+id	type	modality	value	label
+UniProtKB:P00533	protein	proteomics	2.2	EGFR Hsap
+UniProtKB:P31749	protein	phosphoproteomics	1.6	AKT1 Hsap
+UniProtKB:P40763	protein	transcriptomics	1.3	STAT3 Hsap
+UniProtKB:Q01970	protein	proteomics	1.1	PLCB3 Hsap
+UniProtKB:P28482	protein	phosphoproteomics	0.9	MAPK1 Hsap
+UniProtKB:P27361	protein	phosphoproteomics	0.8	MAPK3 Hsap
+

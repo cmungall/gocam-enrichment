@@ -1,0 +1,44 @@
+schema_version: 1
+id: human_plc_gpcr_mixed
+title: Human PLC and GPCR mixed query
+category: mixed_omics
+inputs_path: inputs.tsv
+description: >
+  Human mixed-omics query combining PLCB3, EGFR, AKT1, STAT3, a GPCR/PLC GO
+  process anchor, and myo-inositol.
+provenance:
+  source_kind: curated_fixture
+  source_name: GO-CAM development corpus
+  source_path: ../gocam/data/gocam.yaml
+  selection_notes: >
+    Hand-curated to test mixed protein, phosphoprotein, transcript, chemical,
+    and semantic inputs in a human signaling context.
+  value_notes: Synthetic signed magnitudes.
+context:
+  taxon: NCBITaxon:9606
+  species_label: Homo sapiens
+  recommended_graph: .cache/gocam/full-megagraph.json
+expected_answer:
+  intent: Recover PLC/GPCR and broader human signal-transduction neighborhoods with explicit input grounding.
+  expected_input_coverage: all inputs should map in the current megagraph cache
+  should_surface:
+    - id: GO:0007200
+      label: phospholipase C-activating G protein-coupled receptor signaling pathway
+      role: direct semantic input
+    - id: GO:0007165
+      label: signal transduction
+      role: broad process neighborhood
+    - id: GO:0004435
+      label: phosphatidylinositol-4,5-bisphosphate phospholipase C activity
+      role: PLC function neighborhood
+    - id: CHEBI:17268
+      label: myo-inositol
+      role: chemical input and phosphoinositide bridge
+  evaluation_notes: >
+    Useful for checking whether mixed modalities reinforce interpretable
+    subgraphs while preserving the individual evidence objects.
+recommended_command: >-
+  uv run gocam-enrich run
+  gallery/input_sets/mixed_omics/human_plc_gpcr_mixed/metadata.yaml
+  --graph .cache/gocam/full-megagraph.json --taxon NCBITaxon:9606
+  --out results/human_plc_gpcr_mixed

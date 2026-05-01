@@ -1,0 +1,60 @@
+schema_version: 1
+kind: gocam_enrichment_input_set_metadata_schema
+description: >
+  Lightweight schema for gallery input-set metadata. This is documentation for
+  now, not a runtime validator.
+required_fields:
+  - schema_version
+  - id
+  - title
+  - category
+  - inputs_path
+  - description
+  - provenance
+  - context
+  - expected_answer
+recommended_fields:
+  - recommended_command
+categories:
+  - gene_set
+  - metabolite_set
+  - go_term_set
+  - mixed_omics
+field_definitions:
+  id: Stable machine-readable input set identifier.
+  title: Human-readable display name.
+  category: One of the supported gallery categories.
+  inputs_path: Relative path from metadata.yaml to the parseable input file.
+  description: Short biological or benchmark-oriented summary.
+  provenance:
+    source_kind: curated_fixture, external_dataset, publication, benchmark, or user_supplied.
+    source_name: Name of the source corpus, study, publication, or curator.
+    source_path: Optional local path or URL for reproducibility.
+    selection_notes: How objects were chosen.
+    value_notes: What magnitudes mean.
+  context:
+    taxon: Optional NCBITaxon CURIE to use with --taxon.
+    species_label: Human-readable species or context label.
+    recommended_graph: Graph cache expected by the example command.
+  expected_answer:
+    intent: What biological neighborhood the retrieval should recover.
+    expected_input_coverage: Expected mapping behavior against the current graph.
+    should_surface: Terms, chemicals, genes, or concepts expected in good results.
+    evaluation_notes: How to interpret success or failure.
+  recommended_command: Ready-to-run command for this input set.
+input_columns:
+  id:
+    required: true
+    description: CURIE for a gene, protein, chemical, GO term, complex, or activity.
+  type:
+    required: false
+    description: User-facing object type such as gene, protein, chemical, or go_term.
+  modality:
+    required: false
+    description: Evidence channel such as transcriptomics, proteomics, metabolomics, or semantic.
+  value:
+    required: false
+    description: Numeric signed magnitude; defaults to 1.0 when absent.
+  label:
+    required: false
+    description: User-facing label for readability.

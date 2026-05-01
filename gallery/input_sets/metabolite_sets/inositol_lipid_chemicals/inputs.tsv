@@ -1,0 +1,5 @@
+id	type	modality	value	label
+CHEBI:17268	chemical	metabolomics	-1.2	myo-inositol
+CHEBI:16933	chemical	metabolomics	0.8	ergosterol
+CHEBI:16113	chemical	metabolomics	0.7	cholesterol
+

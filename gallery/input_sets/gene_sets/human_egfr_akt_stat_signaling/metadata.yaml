@@ -1,0 +1,47 @@
+schema_version: 1
+id: human_egfr_akt_stat_signaling
+title: Human EGFR, AKT, STAT, PLC, and MAPK signaling proteins
+category: gene_set
+inputs_path: inputs.tsv
+description: >
+  Human signaling proteins chosen to exercise cross-model diffusion through
+  receptor signaling, kinase cascades, transcription factor regulation, and PLC
+  biology.
+provenance:
+  source_kind: curated_fixture
+  source_name: GO-CAM development corpus
+  source_path: ../gocam/data/gocam.yaml
+  selection_notes: >
+    Hand-selected UniProtKB identifiers with multiple GO-CAM connections around
+    EGFR, AKT, STAT3, PLCB3, MAPK1, and MAPK3 activities.
+  value_notes: >
+    Magnitudes are synthetic and intentionally mix transcriptomic, proteomic,
+    and phosphoproteomic modalities.
+context:
+  taxon: NCBITaxon:9606
+  species_label: Homo sapiens
+  recommended_graph: .cache/gocam/full-megagraph.json
+expected_answer:
+  intent: Recover a connected human signaling neighborhood spanning receptor, kinase, PLC, and transcriptional response biology.
+  expected_input_coverage: all inputs should map in the current megagraph cache
+  should_surface:
+    - id: GO:0007165
+      label: signal transduction
+      role: broad biological process
+    - id: GO:0007200
+      label: phospholipase C-activating G protein-coupled receptor signaling pathway
+      role: PLC/GPCR process anchor
+    - id: GO:0004672
+      label: protein kinase activity
+      role: kinase function neighborhood
+    - id: GO:0004707
+      label: MAP kinase activity
+      role: MAPK function neighborhood
+  evaluation_notes: >
+    This is a stress test for heterogeneous signaling inputs. Broad terms are
+    acceptable only if accompanied by specific activity and model grounding.
+recommended_command: >-
+  uv run gocam-enrich run
+  gallery/input_sets/gene_sets/human_egfr_akt_stat_signaling/metadata.yaml
+  --graph .cache/gocam/full-megagraph.json --taxon NCBITaxon:9606
+  --out results/human_egfr_akt_stat_signaling

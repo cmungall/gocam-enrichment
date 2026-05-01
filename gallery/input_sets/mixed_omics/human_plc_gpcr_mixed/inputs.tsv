@@ -1,0 +1,8 @@
+id	type	modality	value	label
+UniProtKB:Q01970	protein	proteomics	1.8	PLCB3 Hsap
+UniProtKB:P00533	protein	proteomics	1.2	EGFR Hsap
+UniProtKB:P31749	protein	phosphoproteomics	1.0	AKT1 Hsap
+UniProtKB:P40763	protein	transcriptomics	0.8	STAT3 Hsap
+GO:0007200	go_term	semantic	1.0	phospholipase C-activating G protein-coupled receptor signaling pathway
+CHEBI:17268	chemical	metabolomics	-0.8	myo-inositol
+

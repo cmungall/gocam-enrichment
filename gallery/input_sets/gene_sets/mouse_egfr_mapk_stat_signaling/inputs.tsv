@@ -1,0 +1,6 @@
+id	type	modality	value	label
+MGI:MGI:95294	gene	transcriptomics	2.0	Egfr Mmus
+MGI:MGI:87986	gene	transcriptomics	1.3	Akt1 Mmus
+MGI:MGI:1346858	gene	transcriptomics	1.0	Mapk1 Mmus
+MGI:MGI:103038	gene	transcriptomics	0.9	Stat3 Mmus
+

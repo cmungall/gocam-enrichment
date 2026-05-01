@@ -1,0 +1,41 @@
+schema_version: 1
+id: mouse_egfr_mapk_stat_signaling
+title: Mouse Egfr, Akt1, Mapk1, and Stat3 signaling genes
+category: gene_set
+inputs_path: inputs.tsv
+description: >
+  Mouse signaling genes that mirror the human EGFR/AKT/MAPK/STAT theme while
+  testing species-specific grounding through MGI identifiers.
+provenance:
+  source_kind: curated_fixture
+  source_name: GO-CAM development corpus
+  source_path: ../gocam/data/gocam.yaml
+  selection_notes: >
+    Hand-selected MGI identifiers observed in the local megagraph and connected
+    to receptor, kinase cascade, and STAT signaling activities.
+  value_notes: Synthetic transcriptomic magnitudes.
+context:
+  taxon: NCBITaxon:10090
+  species_label: Mus musculus
+  recommended_graph: .cache/gocam/full-megagraph.json
+expected_answer:
+  intent: Recover a mouse receptor-to-kinase-to-transcription signaling neighborhood.
+  expected_input_coverage: all inputs should map in the current megagraph cache
+  should_surface:
+    - id: GO:0007165
+      label: signal transduction
+      role: broad biological process
+    - id: GO:0004672
+      label: protein kinase activity
+      role: kinase function neighborhood
+    - id: GO:0004707
+      label: MAP kinase activity
+      role: MAPK function neighborhood
+  evaluation_notes: >
+    Useful for checking taxon filtering and whether orthologous-looking themes
+    stay grounded in mouse GO-CAM activities.
+recommended_command: >-
+  uv run gocam-enrich run
+  gallery/input_sets/gene_sets/mouse_egfr_mapk_stat_signaling/metadata.yaml
+  --graph .cache/gocam/full-megagraph.json --taxon NCBITaxon:10090
+  --out results/mouse_egfr_mapk_stat_signaling

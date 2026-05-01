@@ -1,0 +1,7 @@
+id	type	modality	value	label
+CHEBI:16933	chemical	metabolomics	1.5	ergosterol
+CHEBI:16113	chemical	metabolomics	1.2	cholesterol
+CHEBI:58225	chemical	metabolomics	-1.0	alpha-D-glucose 6-phosphate(2-)
+CHEBI:58885	chemical	metabolomics	0.8	UDP-alpha-D-glucose(2-)
+CHEBI:58601	chemical	metabolomics	0.6	alpha-D-glucose 1-phosphate(2-)
+

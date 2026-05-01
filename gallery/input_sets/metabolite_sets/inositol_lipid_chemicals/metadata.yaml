@@ -1,0 +1,41 @@
+schema_version: 1
+id: inositol_lipid_chemicals
+title: Inositol and lipid chemical anchors
+category: metabolite_set
+inputs_path: inputs.tsv
+description: >
+  Chemical-only query that tests whether metabolites can retrieve GO-CAM
+  activities and terms without explicit gene seeds.
+provenance:
+  source_kind: curated_fixture
+  source_name: GO-CAM development corpus
+  source_path: ../gocam/data/gocam.yaml
+  selection_notes: >
+    Chosen from ChEBI identifiers observed in GO-CAM chemical associations:
+    myo-inositol, ergosterol, and cholesterol.
+  value_notes: Synthetic metabolomics magnitudes.
+context:
+  taxon: null
+  species_label: mixed or unspecified
+  recommended_graph: .cache/gocam/full-megagraph.json
+expected_answer:
+  intent: Recover activity neighborhoods attached to inositol/phosphoinositide and sterol biology.
+  expected_input_coverage: all inputs should map in the current megagraph cache
+  should_surface:
+    - id: GO:0032958
+      label: inositol phosphate biosynthetic process
+      role: inositol process anchor
+    - id: GO:0006696
+      label: ergosterol biosynthetic process
+      role: sterol process anchor
+    - id: CHEBI:17268
+      label: myo-inositol
+      role: matched chemical
+  evaluation_notes: >
+    Chemical hubs can bridge across taxa and contexts, so inspect model
+    provenance and consider adding --taxon for focused analyses.
+recommended_command: >-
+  uv run gocam-enrich run
+  gallery/input_sets/metabolite_sets/inositol_lipid_chemicals/metadata.yaml
+  --graph .cache/gocam/full-megagraph.json
+  --out results/inositol_lipid_chemicals

@@ -1,0 +1,7 @@
+id	type	modality	value	label
+GO:0032958	go_term	semantic	1.0	inositol phosphate biosynthetic process
+GO:0046854	go_term	semantic	1.0	phosphatidylinositol phosphate biosynthetic process
+GO:0006661	go_term	semantic	1.0	phosphatidylinositol biosynthetic process
+GO:0004435	go_term	semantic	0.8	phosphatidylinositol-4,5-bisphosphate phospholipase C activity
+GO:0007200	go_term	semantic	0.6	phospholipase C-activating G protein-coupled receptor signaling pathway
+

@@ -1,0 +1,10 @@
+id	type	modality	value	label
+PomBase:SPAC22F8.11	gene	transcriptomics	2.0	plc1 Spom
+PomBase:SPAC20G8.03	gene	transcriptomics	-1.2	itr2 Spom
+PomBase:SPAC607.04	gene	transcriptomics	1.4	arg82 Spom
+PomBase:SPAC1D4.08	gene	transcriptomics	-1.0	pis1 Spom
+PomBase:SPCC4B3.10c	gene	transcriptomics	1.1	ipk1 Spom
+PomBase:SPAC19G12.14	gene	transcriptomics	0.8	its3 Spom
+PomBase:SPCC970.08	gene	transcriptomics	0.7	kcs1 Spom
+PomBase:SPCC1672.06c	gene	transcriptomics	0.6	asp1 Spom
+

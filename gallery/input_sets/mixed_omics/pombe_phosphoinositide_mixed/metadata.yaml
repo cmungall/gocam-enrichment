@@ -1,0 +1,52 @@
+schema_version: 1
+id: pombe_phosphoinositide_mixed
+title: Pombe mixed phosphoinositide query
+category: mixed_omics
+inputs_path: inputs.tsv
+description: >
+  Mixed fission yeast query with genes, a chemical, and semantic GO-term anchors
+  around phosphoinositide and inositol phosphate biology.
+provenance:
+  source_kind: curated_fixture
+  source_name: GO-CAM development corpus
+  source_path: ../gocam/data/gocam.yaml
+  selection_notes: >
+    Combines a subset of PomBase phosphoinositide genes with myo-inositol and
+    GO terms to test whether multi-omic evidence strengthens the same grounded
+    neighborhood.
+  value_notes: Synthetic signed magnitudes across transcriptomics, metabolomics, and semantic anchors.
+context:
+  taxon: NCBITaxon:4896
+  species_label: Schizosaccharomyces pombe
+  recommended_graph: .cache/gocam/full-megagraph.json
+expected_answer:
+  intent: Recover compact subgraphs grounded in Pombe inositol/phosphoinositide biology.
+  expected_input_coverage: all inputs should map in the current megagraph cache
+  observed_reference_run:
+    date: "2026-05-01"
+    command_options: --top 3 --radius 1 --max-bridge-degree 10 --max-subgraph-activities 80
+    top_labels:
+      - inositol phosphate biosynthetic process
+      - plasma membrane
+      - endoplasmic reticulum membrane
+      - myo-inositol import across plasma membrane
+      - myo-inositol:proton symporter activity
+  should_surface:
+    - id: GO:0032958
+      label: inositol phosphate biosynthetic process
+      role: process anchor
+    - id: CHEBI:17268
+      label: myo-inositol
+      role: chemical input and bridge
+    - id: GO:0046854
+      label: phosphatidylinositol phosphate biosynthetic process
+      role: process anchor
+  evaluation_notes: >
+    This is the best current gallery fixture for agentic interpretation because
+    the expected answer combines genes, terms, chemicals, and activity labels.
+recommended_command: >-
+  uv run gocam-enrich run
+  gallery/input_sets/mixed_omics/pombe_phosphoinositide_mixed/metadata.yaml
+  --graph .cache/gocam/full-megagraph.json --taxon NCBITaxon:4896
+  --out results/pombe_phosphoinositide_mixed
+  --top 3 --radius 1 --max-bridge-degree 10 --max-subgraph-activities 80
