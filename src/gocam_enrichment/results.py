@@ -12,6 +12,7 @@ class InputResult(BaseModel):
     value: float = 1.0
     label: str | None = None
     node: str | None = None
+    match: str | None = None
     node_id: str | None = None
     node_kind: str | None = None
     node_label: str | None = None

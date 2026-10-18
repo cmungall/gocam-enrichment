@@ -93,6 +93,36 @@ uv run gocam-enrich run inputs.tsv \
   --out results/
 ```
 
+## Metabolomics Inputs
+
+GO-CAM models name chemicals by ChEBI, usually the pH 7.3 major microspecies
+(citrate(3-), not citric acid), while metabolomics platforms report neutral
+forms or HMDB/KEGG ids. Exact matching misses most of them. Point
+`--chemical-normalization` at the output of `genesets-workflows
+prepare-chem2go` (monarch-initiative/genesets) to match inputs and graph
+chemical nodes by canonical ChEBI id instead:
+
+```bash
+uv run gocam-enrich run metabolites.tsv \
+  --graph .cache/gocam/graph.json \
+  --chemical-normalization ../genesets/evals/chem2go/generated/current \
+  --out results/
+```
+
+`HMDB0000094`, `CHEBI:30769` (citric acid) and `CHEBI:16947` (citrate(3-))
+then all seed the same node; the `match` field in the outputs records
+`exact`, `activity` or `chemical_normalized`.
+
+Chemicals shared by many activities are shortcuts through the graph, so the
+walk is damped around them:
+
+- edges into a chemical node are scaled by `degree ** -alpha`
+  (`--chemical-hub-alpha`, default 0.5; 0 disables);
+- currency metabolites (water, H+, ATP/ADP, NAD(P)(H), CoA, SAM, common ions)
+  receive no walk mass unless they are themselves inputs, so they cannot carry
+  signal between unrelated activities (`--keep-currency` disables). The list
+  comes from the prep directory's `currency.tsv`, or a built-in default.
+
 ## Outputs
 
 `run` writes:
