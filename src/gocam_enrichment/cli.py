@@ -168,13 +168,14 @@ def run(
     if mapped_count == 0:
         raise typer.BadParameter("None of the input objects mapped to graph nodes.")
 
+    is_currency = None if keep_currency else chemicals.is_currency
     scores, signed_scores = diffuse(
         graph,
         mapped,
         restart=restart,
         steps=steps,
         chemical_hub_alpha=chemical_hub_alpha,
-        is_currency=None if keep_currency else chemicals.is_currency,
+        is_currency=is_currency,
     )
     subgraphs = extract_subgraphs(
         graph,
@@ -185,6 +186,7 @@ def run(
         radius=radius,
         max_bridge_degree=max_bridge_degree,
         max_subgraph_activities=max_subgraph_activities,
+        is_currency=is_currency,
     )
     write_outputs(subgraphs, mapped, out, input_path=inputs, input_metadata=load_input_metadata(inputs))
     console.print(

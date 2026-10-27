@@ -3,7 +3,7 @@ from __future__ import annotations
 import networkx as nx
 
 from gocam_enrichment.chemicals import ChemicalIndex
-from gocam_enrichment.diffusion import diffuse, map_inputs
+from gocam_enrichment.diffusion import diffuse, extract_subgraphs, map_inputs
 from gocam_enrichment.gocam_graph import _add_edge, activity_key, term_key
 from gocam_enrichment.model_io import InputObject
 
@@ -85,3 +85,41 @@ def test_hub_damping_reduces_flow_into_shared_chemicals():
     plain, _ = diffuse(graph, mapped)
     damped, _ = diffuse(graph, mapped, chemical_hub_alpha=1.0)
     assert damped[term_key(ATP)] < plain[term_key(ATP)]
+
+
+def test_equivalent_inputs_seed_the_same_node():
+    graph = _graph()
+    graph.add_node(term_key(CITRIC_ACID), kind="chemical", id=CITRIC_ACID, label="citric acid")
+    _add_edge(graph, term_key(CITRIC_ACID), activity_key("a2"), "has_input", weight=3.0, sign=1, model_id="m")
+
+    mapped = map_inputs(
+        graph,
+        [InputObject(id=CITRIC_ACID), InputObject(id="HMDB0000094"), InputObject(id=CITRATE)],
+        _index(),
+    )
+    assert {m.node for m in mapped} == {term_key(CITRATE)}
+    assert [m.match for m in mapped] == ["chemical_normalized", "chemical_normalized", "exact"]
+
+
+def test_multi_target_xref_uses_candidate_present_in_graph():
+    index = _index()
+    index.to_canonical["CHEBI:4167"] = "CHEBI:4167"  # absent from the graph, lower number
+    index.xrefs["kegg.compound:C00158"] = ["CHEBI:4167", CITRIC_ACID]
+
+    mapped = map_inputs(_graph(), [InputObject(id="C00158")], index)
+    assert mapped[0].node == term_key(CITRATE)
+
+
+def test_extraction_does_not_bridge_through_currency():
+    graph = _graph()
+    mapped = map_inputs(graph, [InputObject(id=CITRATE)], _index())
+    scores, signed = diffuse(graph, mapped, is_currency=_index().is_currency)
+
+    open_subgraphs = extract_subgraphs(graph, mapped, scores, signed)
+    blocked_subgraphs = extract_subgraphs(graph, mapped, scores, signed, is_currency=_index().is_currency)
+
+    def activities(subgraphs):
+        return {a["id"] for s in subgraphs for a in s["activities"]}
+
+    assert "a2" in activities(open_subgraphs)
+    assert activities(blocked_subgraphs) == {"a1"}

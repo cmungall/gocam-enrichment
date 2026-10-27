@@ -107,27 +107,40 @@ class ChemicalIndex:
                 currency = frozenset(row["chemical_id"] for row in csv.DictReader(handle, delimiter="\t"))
         return cls(to_canonical, xrefs, currency)
 
-    def canonical(self, raw: str) -> str | None:
-        """Canonical ChEBI id for any supported id, or None.
+    def candidates(self, raw: str) -> list[str]:
+        """Every canonical ChEBI id a supported id may denote, lowest number first.
 
-        Without a loaded table, ChEBI ids map to themselves.
+        A ChEBI id has at most one; a cross-reference can list several ChEBI
+        entries that do not collapse together (e.g. a KEGG id cited by several
+        glucose forms). Without a loaded table, ChEBI ids map to themselves.
+
+        >>> index = ChemicalIndex({"CHEBI:30769": "CHEBI:16947", "CHEBI:16947": "CHEBI:16947", "CHEBI:4167": "CHEBI:4167"},
+        ...                       {"kegg.compound:C00158": ["CHEBI:30769", "CHEBI:4167"]})
+        >>> index.candidates("C00158")
+        ['CHEBI:4167', 'CHEBI:16947']
+        >>> ChemicalIndex().candidates("chebi:17234")
+        ['CHEBI:17234']
+        """
+        curie = parse_chemical_id(raw)
+        if curie is None:
+            return []
+        if curie.startswith("CHEBI:"):
+            if not self.to_canonical:
+                return [curie]
+            return [self.to_canonical[curie]] if curie in self.to_canonical else []
+        targets = {self.to_canonical[c] for c in self.xrefs.get(curie, ()) if c in self.to_canonical}
+        return sorted(targets, key=_chebi_number)
+
+    def canonical(self, raw: str) -> str | None:
+        """The first of :meth:`candidates`, or None.
 
         >>> index = ChemicalIndex({"CHEBI:30769": "CHEBI:16947", "CHEBI:16947": "CHEBI:16947"},
         ...                       {"hmdb:HMDB0000094": ["CHEBI:30769"]})
         >>> index.canonical("CHEBI:30769"), index.canonical("HMDB0000094")
         ('CHEBI:16947', 'CHEBI:16947')
-        >>> ChemicalIndex().canonical("chebi:17234")
-        'CHEBI:17234'
         """
-        curie = parse_chemical_id(raw)
-        if curie is None:
-            return None
-        if curie.startswith("CHEBI:"):
-            if not self.to_canonical:
-                return curie
-            return self.to_canonical.get(curie)
-        targets = {self.to_canonical[c] for c in self.xrefs.get(curie, ()) if c in self.to_canonical}
-        return min(targets, key=_chebi_number) if targets else None
+        found = self.candidates(raw)
+        return found[0] if found else None
 
     def is_currency(self, raw: str) -> bool:
         canonical = self.canonical(raw)

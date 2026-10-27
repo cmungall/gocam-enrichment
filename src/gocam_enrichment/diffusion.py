@@ -30,11 +30,14 @@ def map_inputs(
     inputs: list[InputObject],
     chemicals: ChemicalIndex | None = None,
 ) -> list[MappedInput]:
-    """Map inputs to graph nodes by exact id, then by canonical chemical id.
+    """Map inputs to graph nodes, by canonical chemical id first, then exact id.
 
     With a ``ChemicalIndex``, an input such as ``HMDB0000094`` or neutral
-    citric acid matches the citrate(3-) node a GO-CAM model uses. When several
-    graph nodes share the canonical id, the best-connected one is used.
+    citric acid matches the citrate(3-) node a GO-CAM model uses. All inputs
+    in one canonical group seed the same node: the best-connected graph node
+    of that group, even when the input's own id is also a graph node. A
+    cross-reference naming several ChEBI entries uses the first one present
+    in the graph.
     """
 
     by_canonical: dict[str, list[str]] = defaultdict(list)
@@ -53,17 +56,17 @@ def map_inputs(
     for input_obj in inputs:
         term = term_key(input_obj.id)
         activity = activity_key(input_obj.id)
-        if graph.has_node(term):
+        candidates = chemicals.candidates(input_obj.id) if chemicals is not None else []
+        bucket = next((by_canonical[c] for c in candidates if c in by_canonical), None)
+        if bucket:
+            match = "exact" if bucket[0] == term else "chemical_normalized"
+            mapped.append(MappedInput(input_obj, bucket[0], match))
+        elif graph.has_node(term):
             mapped.append(MappedInput(input_obj, term, "exact"))
         elif graph.has_node(activity):
             mapped.append(MappedInput(input_obj, activity, "activity"))
         else:
-            canonical = chemicals.canonical(input_obj.id) if chemicals is not None else None
-            nodes = by_canonical.get(canonical or "", [])
-            if nodes:
-                mapped.append(MappedInput(input_obj, nodes[0], "chemical_normalized"))
-            else:
-                mapped.append(MappedInput(input_obj, None))
+            mapped.append(MappedInput(input_obj, None))
     return mapped
 
 
@@ -178,8 +181,13 @@ def extract_subgraphs(
     radius: int = 1,
     max_bridge_degree: int = 50,
     max_subgraph_activities: int = 150,
+    is_currency: Callable[[str], bool] | None = None,
 ) -> list[dict[str, Any]]:
-    """Extract local high-scoring activity neighborhoods."""
+    """Extract local high-scoring activity neighborhoods.
+
+    Neighborhoods expand through shared objects, except currency chemicals
+    (per ``is_currency``) that are not themselves inputs, matching the walk.
+    """
 
     ranked_activities = [
         node
@@ -193,6 +201,15 @@ def extract_subgraphs(
 
     clusters: list[set[str]] = []
     bridge_degrees = _bridge_degrees(graph)
+    seed_nodes = {mapped.node for mapped in mapped_inputs if mapped.node is not None}
+    blocked = {
+        node
+        for node, data in graph.nodes(data=True)
+        if is_currency is not None
+        and data.get("kind") == "chemical"
+        and node not in seed_nodes
+        and is_currency(data.get("id") or original_id(node))
+    }
     for seed in ranked_activities:
         neighborhood = _activity_neighborhood(
             graph,
@@ -200,6 +217,7 @@ def extract_subgraphs(
             radius=radius,
             bridge_degrees=bridge_degrees,
             max_bridge_degree=max_bridge_degree,
+            blocked=blocked,
         )
         if not neighborhood:
             continue
@@ -231,6 +249,7 @@ def _activity_neighborhood(
     radius: int,
     bridge_degrees: dict[str, int],
     max_bridge_degree: int,
+    blocked: set[str] | frozenset[str] = frozenset(),
 ) -> set[str]:
     selected = {seed}
     frontier = {seed}
@@ -251,6 +270,8 @@ def _activity_neighborhood(
             bridge_degrees=bridge_degrees,
             max_bridge_degree=max_bridge_degree,
         ):
+            if term in blocked:
+                continue
             bridged.update(_activities_attached_to_term(graph, term))
     return bridged
 
