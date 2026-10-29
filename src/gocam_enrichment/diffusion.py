@@ -3,10 +3,11 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 from math import sqrt
-from typing import Any
+from typing import Any, Callable
 
 import networkx as nx
 
+from gocam_enrichment.chemicals import ChemicalIndex
 from gocam_enrichment.gocam_graph import (
     ACTIVITY_PREFIX,
     aggregate_parallel_edges,
@@ -21,17 +22,49 @@ from gocam_enrichment.model_io import InputObject
 class MappedInput:
     input: InputObject
     node: str | None
+    match: str | None = None
 
 
-def map_inputs(graph: nx.MultiDiGraph, inputs: list[InputObject]) -> list[MappedInput]:
+def map_inputs(
+    graph: nx.MultiDiGraph,
+    inputs: list[InputObject],
+    chemicals: ChemicalIndex | None = None,
+) -> list[MappedInput]:
+    """Map inputs to graph nodes, by canonical chemical id first, then exact id.
+
+    With a ``ChemicalIndex``, an input such as ``HMDB0000094`` or neutral
+    citric acid matches the citrate(3-) node a GO-CAM model uses. All inputs
+    in one canonical group seed the same node: the best-connected graph node
+    of that group, even when the input's own id is also a graph node. A
+    cross-reference naming several ChEBI entries uses the first one present
+    in the graph.
+    """
+
+    by_canonical: dict[str, list[str]] = defaultdict(list)
+    if chemicals is not None:
+        degrees = _bridge_degrees(graph)
+        for node, data in graph.nodes(data=True):
+            if data.get("kind") != "chemical":
+                continue
+            canonical = chemicals.canonical(data.get("id") or original_id(node))
+            if canonical:
+                by_canonical[canonical].append(node)
+        for nodes in by_canonical.values():
+            nodes.sort(key=lambda node: (-degrees.get(node, 0), node))
+
     mapped: list[MappedInput] = []
     for input_obj in inputs:
         term = term_key(input_obj.id)
         activity = activity_key(input_obj.id)
-        if graph.has_node(term):
-            mapped.append(MappedInput(input_obj, term))
+        candidates = chemicals.candidates(input_obj.id) if chemicals is not None else []
+        bucket = next((by_canonical[c] for c in candidates if c in by_canonical), None)
+        if bucket:
+            match = "exact" if bucket[0] == term else "chemical_normalized"
+            mapped.append(MappedInput(input_obj, bucket[0], match))
+        elif graph.has_node(term):
+            mapped.append(MappedInput(input_obj, term, "exact"))
         elif graph.has_node(activity):
-            mapped.append(MappedInput(input_obj, activity))
+            mapped.append(MappedInput(input_obj, activity, "activity"))
         else:
             mapped.append(MappedInput(input_obj, None))
     return mapped
@@ -43,12 +76,24 @@ def diffuse(
     *,
     restart: float = 0.35,
     steps: int = 40,
+    chemical_hub_alpha: float = 0.0,
+    is_currency: Callable[[str], bool] | None = None,
 ) -> tuple[dict[str, float], dict[str, float]]:
-    """Run simple random-walk-with-restart diffusion over weighted graph edges."""
+    """Run simple random-walk-with-restart diffusion over weighted graph edges.
+
+    Chemical nodes shared by many activities act as shortcuts between
+    unrelated parts of the graph. Edges into a chemical node are scaled by
+    ``degree ** -chemical_hub_alpha`` (degree = activities it touches), and
+    chemical nodes for which ``is_currency(id)`` is true receive no walk mass
+    unless they are seeds, so ATP or water cannot carry signal from one
+    activity to the next.
+    """
 
     seeds = _seed_vector(mapped_inputs, signed=False)
     signed_seeds = _seed_vector(mapped_inputs, signed=True)
     adjacency = aggregate_parallel_edges(graph)
+    if chemical_hub_alpha or is_currency is not None:
+        adjacency = _damp_chemical_hubs(graph, adjacency, set(seeds), chemical_hub_alpha, is_currency)
     scores = dict(seeds)
     signed_scores = dict(signed_seeds)
     out_weight = {
@@ -60,6 +105,33 @@ def diffuse(
         scores = _step(scores, seeds, adjacency, out_weight, restart, signed=False)
         signed_scores = _step(signed_scores, signed_seeds, adjacency, out_weight, restart, signed=True)
     return scores, signed_scores
+
+
+def _damp_chemical_hubs(
+    graph: nx.MultiDiGraph,
+    adjacency: dict[str, dict[str, tuple[float, int]]],
+    seeds: set[str],
+    alpha: float,
+    is_currency: Callable[[str], bool] | None,
+) -> dict[str, dict[str, tuple[float, int]]]:
+    degrees = _bridge_degrees(graph)
+    factors: dict[str, float] = {}
+    for node, data in graph.nodes(data=True):
+        if data.get("kind") != "chemical" or node in seeds:
+            continue
+        if is_currency is not None and is_currency(data.get("id") or original_id(node)):
+            factors[node] = 0.0
+        elif alpha and degrees.get(node, 0) > 1:
+            factors[node] = degrees[node] ** -alpha
+    damped: dict[str, dict[str, tuple[float, int]]] = {}
+    for source, targets in adjacency.items():
+        kept: dict[str, tuple[float, int]] = {}
+        for target, (weight, sign) in targets.items():
+            factor = factors.get(target, 1.0)
+            if factor > 0.0:
+                kept[target] = (weight * factor, sign)
+        damped[source] = kept
+    return damped
 
 
 def _seed_vector(mapped_inputs: list[MappedInput], *, signed: bool) -> dict[str, float]:
@@ -109,8 +181,13 @@ def extract_subgraphs(
     radius: int = 1,
     max_bridge_degree: int = 50,
     max_subgraph_activities: int = 150,
+    is_currency: Callable[[str], bool] | None = None,
 ) -> list[dict[str, Any]]:
-    """Extract local high-scoring activity neighborhoods."""
+    """Extract local high-scoring activity neighborhoods.
+
+    Neighborhoods expand through shared objects, except currency chemicals
+    (per ``is_currency``) that are not themselves inputs, matching the walk.
+    """
 
     ranked_activities = [
         node
@@ -124,6 +201,15 @@ def extract_subgraphs(
 
     clusters: list[set[str]] = []
     bridge_degrees = _bridge_degrees(graph)
+    seed_nodes = {mapped.node for mapped in mapped_inputs if mapped.node is not None}
+    blocked = {
+        node
+        for node, data in graph.nodes(data=True)
+        if is_currency is not None
+        and data.get("kind") == "chemical"
+        and node not in seed_nodes
+        and is_currency(data.get("id") or original_id(node))
+    }
     for seed in ranked_activities:
         neighborhood = _activity_neighborhood(
             graph,
@@ -131,6 +217,7 @@ def extract_subgraphs(
             radius=radius,
             bridge_degrees=bridge_degrees,
             max_bridge_degree=max_bridge_degree,
+            blocked=blocked,
         )
         if not neighborhood:
             continue
@@ -162,6 +249,7 @@ def _activity_neighborhood(
     radius: int,
     bridge_degrees: dict[str, int],
     max_bridge_degree: int,
+    blocked: set[str] | frozenset[str] = frozenset(),
 ) -> set[str]:
     selected = {seed}
     frontier = {seed}
@@ -182,6 +270,8 @@ def _activity_neighborhood(
             bridge_degrees=bridge_degrees,
             max_bridge_degree=max_bridge_degree,
         ):
+            if term in blocked:
+                continue
             bridged.update(_activities_attached_to_term(graph, term))
     return bridged
 
@@ -289,6 +379,7 @@ def _materialize_subgraph(
             "value": mapped.input.value,
             "label": mapped.input.label,
             "node": mapped.node,
+            "match": mapped.match,
             "node_id": graph.nodes[mapped.node].get("id") if mapped.node is not None else None,
             "node_kind": graph.nodes[mapped.node].get("kind") if mapped.node is not None else None,
             "node_label": graph.nodes[mapped.node].get("label") if mapped.node is not None else None,

@@ -6,6 +6,7 @@ from typing import Annotated, Optional
 import typer
 from rich.console import Console
 
+from gocam_enrichment.chemicals import ChemicalIndex
 from gocam_enrichment.diffusion import diffuse, extract_subgraphs, map_inputs
 from gocam_enrichment.gocam_graph import build_graph, filter_graph_by_taxon, graph_summary, load_graph, save_graph
 from gocam_enrichment.model_io import fetch_models, load_input_metadata, load_models, parse_inputs, write_models_yaml
@@ -118,6 +119,30 @@ def run(
         Optional[Path],
         typer.Option("--save-graph", help="Save graph built during this run."),
     ] = None,
+    chemical_normalization: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--chemical-normalization",
+            help=(
+                "Output directory of `genesets-workflows prepare-chem2go`. Matches chemical inputs "
+                "(HMDB, KEGG, neutral ChEBI forms, ...) to GO-CAM chemical nodes by canonical ChEBI id."
+            ),
+        ),
+    ] = None,
+    chemical_hub_alpha: Annotated[
+        float,
+        typer.Option(
+            "--chemical-hub-alpha",
+            help="Scale walk edges into a chemical by degree**-alpha; 0 disables hub damping.",
+        ),
+    ] = 0.5,
+    keep_currency: Annotated[
+        bool,
+        typer.Option(
+            "--keep-currency",
+            help="Let currency metabolites (water, ATP, NAD(P)H, CoA, ...) carry walk signal between activities.",
+        ),
+    ] = False,
 ) -> None:
     """Run diffusion retrieval and write ranked grounded subgraphs."""
 
@@ -137,12 +162,21 @@ def run(
     if save_built_graph is not None:
         save_graph(graph, save_built_graph)
 
-    mapped = map_inputs(graph, query_inputs)
+    chemicals = ChemicalIndex.load(chemical_normalization) if chemical_normalization else ChemicalIndex()
+    mapped = map_inputs(graph, query_inputs, chemicals)
     mapped_count = sum(1 for item in mapped if item.node is not None)
     if mapped_count == 0:
         raise typer.BadParameter("None of the input objects mapped to graph nodes.")
 
-    scores, signed_scores = diffuse(graph, mapped, restart=restart, steps=steps)
+    is_currency = None if keep_currency else chemicals.is_currency
+    scores, signed_scores = diffuse(
+        graph,
+        mapped,
+        restart=restart,
+        steps=steps,
+        chemical_hub_alpha=chemical_hub_alpha,
+        is_currency=is_currency,
+    )
     subgraphs = extract_subgraphs(
         graph,
         mapped,
@@ -152,6 +186,7 @@ def run(
         radius=radius,
         max_bridge_degree=max_bridge_degree,
         max_subgraph_activities=max_subgraph_activities,
+        is_currency=is_currency,
     )
     write_outputs(subgraphs, mapped, out, input_path=inputs, input_metadata=load_input_metadata(inputs))
     console.print(

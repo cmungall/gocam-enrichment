@@ -695,6 +695,7 @@ def _input_result(mapped: MappedInput) -> InputResult:
         value=mapped.input.value,
         label=mapped.input.label,
         node=mapped.node,
+        match=mapped.match,
     )
 
 
